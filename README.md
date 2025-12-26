@@ -1,2 +1,16 @@
 # offline-location-tracking-android
-Live Location Tracking feature that sends real-time location updates to the server. However, in areas with poor or no internet connectivity, these location logs are not transmitted, resulting in data loss.
+
+This project demonstrates an offline-first live location tracking module
+with guaranteed delivery of location data even during network outages.
+
+## Tech Stack
+- Kotlin
+- MVVM
+- Room Database
+- WorkManager
+- Foreground Service
+- FusedLocationProviderClient
+
+## Status
+🚧 Work in progress
+
