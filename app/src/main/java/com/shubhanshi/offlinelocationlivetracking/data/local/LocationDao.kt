@@ -16,4 +16,10 @@ interface LocationDao {
 
     @Query("DELETE FROM locations")
     suspend fun clearAll()
+
+    @Query("SELECT * from locations WHERE isSynced = 0")
+    suspend fun getUnsyncedLocations() : List<LocationEntity>
+
+    @Query("UPDATE locations SET isSynced = 1 WHERE id IN (:ids)")
+    suspend fun markLocationsAsSynced(ids: List<Long>)
 }
