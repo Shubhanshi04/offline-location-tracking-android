@@ -11,18 +11,23 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.shubhanshi.offlinelocationlivetracking.data.repository.LocationRepository
 import com.shubhanshi.offlinelocationlivetracking.service.LocationTrackingService
+import com.shubhanshi.offlinelocationlivetracking.ui.NetworkObserver
 import com.shubhanshi.offlinelocationlivetracking.ui.theme.OfflineLocationLiveTrackingTheme
 import com.shubhanshi.offlinelocationlivetracking.worker.LocationSyncWorker
 
@@ -57,7 +62,24 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OfflineLocationLiveTrackingTheme {
+                val repository = remember {
+                    LocationRepository(applicationContext)
+                }
+                val pendingCount by repository
+                    .getPendingLogs()
+                    .collectAsState(initial = 0)
+
+                val networkObserver = remember {
+                    NetworkObserver(applicationContext)
+                }
+                val isOnline by networkObserver.isOnline.collectAsState()
+
                 CenterButtons(
+                    pendingCount = pendingCount,
+                    isOnline = isOnline,
+                    refresh = {
+                        triggerLocationSync(this)
+                    },
                     onStartClick = {
                         requestPermissionsAndStart()
                         triggerLocationSync(this)
@@ -98,6 +120,9 @@ private fun triggerLocationSync(context: Context) {
 
 @Composable
 private fun CenterButtons(
+    pendingCount: Int,
+    isOnline: Boolean,
+    refresh: () -> Unit,
     onStartClick: () -> Unit,
     onStopClick: () -> Unit
 ) {
@@ -108,11 +133,23 @@ private fun CenterButtons(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(text = if (pendingCount > 0) "Pending Logs : $pendingCount" else "No Pending Logs 🎉")
+
+            IconButton(onClick = refresh) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = onStartClick
-        ) {
+            onClick = onStartClick) {
             Text("Start Tracking")
         }
 
@@ -120,9 +157,15 @@ private fun CenterButtons(
 
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = onStopClick
-        ) {
+            onClick = onStopClick) {
             Text("Stop Tracking")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text =
+                if (isOnline) "Status : Online 🟢" else "Offline\nCheck your internet ❗️"
+        )
     }
 }
