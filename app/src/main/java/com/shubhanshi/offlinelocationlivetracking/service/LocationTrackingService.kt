@@ -15,6 +15,11 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.shubhanshi.offlinelocationlivetracking.R
+import com.shubhanshi.offlinelocationlivetracking.data.local.LocationEntity
+import com.shubhanshi.offlinelocationlivetracking.data.repository.LocationRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class LocationTrackingService : Service() {
 
@@ -26,28 +31,36 @@ class LocationTrackingService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
 
+    private lateinit var repository: LocationRepository
+
     override fun onCreate() {
         super.onCreate()
-
+        repository = LocationRepository(applicationContext)
         createNotificationChannel()
 
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(this)
 
         locationCallback = object : LocationCallback() {
+
             override fun onLocationResult(result: LocationResult) {
                 result.lastLocation?.let { location ->
-                    val lat = location.latitude
-                    val lng = location.longitude
-                    val accuracy = location.accuracy
-                    val timestamp = location.time
-                    val speed = location.speed
-
-                    // Later: save to Room
+                    val entity = LocationEntity(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        accuracy = location.accuracy,
+                        speed = location.speed,
+                        timestamp = location.time
+                    )
+                    CoroutineScope(Dispatchers.IO).launch {
+                        repository.savedLocation(entity)
+                    }
                 }
+
             }
         }
     }
+
 
     override fun onStartCommand(
         intent: Intent?,
