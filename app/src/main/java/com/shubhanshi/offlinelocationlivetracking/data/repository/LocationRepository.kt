@@ -14,4 +14,12 @@ class LocationRepository(context: Context) {
     }
 
     fun getLocations() = dao.getAllLocations()
+
+    suspend fun getUnsyncedLocation() : List<LocationEntity> {
+        return dao.getUnsyncedLocations()
+    }
+
+    suspend fun markAsSynced(ids : List<Long>) {
+        dao.markLocationsAsSynced(ids)
+    }
 }

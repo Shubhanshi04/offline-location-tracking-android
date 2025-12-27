@@ -2,6 +2,7 @@ package com.shubhanshi.offlinelocationlivetracking
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -15,9 +16,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.shubhanshi.offlinelocationlivetracking.service.LocationTrackingService
 import com.shubhanshi.offlinelocationlivetracking.ui.theme.OfflineLocationLiveTrackingTheme
+import com.shubhanshi.offlinelocationlivetracking.worker.LocationSyncWorker
 
 class MainActivity : ComponentActivity() {
 
@@ -51,7 +58,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             OfflineLocationLiveTrackingTheme {
                 CenterButtons(
-                    onStartClick = { requestPermissionsAndStart() },
+                    onStartClick = {
+                        requestPermissionsAndStart()
+                        triggerLocationSync(this)
+                    },
                     onStopClick = { stopService(serviceIntent) }
                 )
             }
@@ -70,6 +80,20 @@ class MainActivity : ComponentActivity() {
 
         permissionLauncher.launch(permissions.toTypedArray())
     }
+}
+
+private fun triggerLocationSync(context: Context) {
+    val constraints = androidx.work.Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+
+    val syncRequest = OneTimeWorkRequestBuilder<LocationSyncWorker>()
+        .setConstraints(constraints)
+        .build()
+
+    WorkManager
+        .getInstance(context)
+        .enqueue(syncRequest)
 }
 
 @Composable
