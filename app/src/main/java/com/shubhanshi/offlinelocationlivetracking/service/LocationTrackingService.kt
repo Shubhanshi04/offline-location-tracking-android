@@ -16,9 +16,11 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.shubhanshi.offlinelocationlivetracking.R
 import com.shubhanshi.offlinelocationlivetracking.data.local.LocationEntity
+import com.shubhanshi.offlinelocationlivetracking.data.preference.UserPreferences
 import com.shubhanshi.offlinelocationlivetracking.data.repository.LocationRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class LocationTrackingService : Service() {
@@ -32,11 +34,19 @@ class LocationTrackingService : Service() {
     private lateinit var locationCallback: LocationCallback
 
     private lateinit var repository: LocationRepository
+    private lateinit var userPreferences: UserPreferences
+
+    private var employeeId: String = ""
 
     override fun onCreate() {
         super.onCreate()
         repository = LocationRepository(applicationContext)
+        userPreferences = UserPreferences(applicationContext)
         createNotificationChannel()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            employeeId = userPreferences.employeeId.first()
+        }
 
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(this)
@@ -46,6 +56,7 @@ class LocationTrackingService : Service() {
             override fun onLocationResult(result: LocationResult) {
                 result.lastLocation?.let { location ->
                     val entity = LocationEntity(
+                        employeeId = employeeId,
                         latitude = location.latitude,
                         longitude = location.longitude,
                         accuracy = location.accuracy,

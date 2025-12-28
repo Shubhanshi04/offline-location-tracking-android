@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.shubhanshi.offlinelocationlivetracking.data.preference.UserPreferences
 import com.shubhanshi.offlinelocationlivetracking.data.repository.LocationRepository
 import com.shubhanshi.offlinelocationlivetracking.service.LocationTrackingService
 import com.shubhanshi.offlinelocationlivetracking.ui.NetworkObserver
@@ -62,6 +65,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OfflineLocationLiveTrackingTheme {
+                LaunchedEffect(Unit) {
+                    UserPreferences(applicationContext)
+                        .saveEmployeeId("EMP001")
+                }
+
                 val repository = remember {
                     LocationRepository(applicationContext)
                 }
@@ -74,6 +82,9 @@ class MainActivity : ComponentActivity() {
                 }
                 val isOnline by networkObserver.isOnline.collectAsState()
 
+                var showStartDialog by remember { mutableStateOf(false) }
+                var showStopDialog by remember { mutableStateOf(false) }
+
                 CenterButtons(
                     pendingCount = pendingCount,
                     isOnline = isOnline,
@@ -81,11 +92,56 @@ class MainActivity : ComponentActivity() {
                         triggerLocationSync(this)
                     },
                     onStartClick = {
-                        requestPermissionsAndStart()
-                        triggerLocationSync(this)
+                        showStartDialog = true
                     },
-                    onStopClick = { stopService(serviceIntent) }
+                    onStopClick = {
+                        showStopDialog = true
+                    }
                 )
+
+                if (showStartDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showStartDialog = false },
+                        title = { Text("Start Tracking") },
+                        text = { Text("Do you want to start tracking ?") },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showStartDialog = false
+                                    requestPermissionsAndStart()
+                                    triggerLocationSync(this)
+                                }
+                            ) { Text("Start") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showStartDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                if (showStopDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showStopDialog = false },
+                        title = { Text("Stop Tracking") },
+                        text = { Text("Do you want to stop location tracking?") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showStopDialog = false
+                                stopService(serviceIntent)
+                            }) {
+                                Text("Stop")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showStopDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
             }
         }
     }
@@ -146,10 +202,11 @@ private fun CenterButtons(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
+        
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = onStartClick) {
+            onClick = onStartClick,
+        ) {
             Text("Start Tracking")
         }
 
@@ -157,7 +214,8 @@ private fun CenterButtons(
 
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = onStopClick) {
+            onClick = onStopClick
+        ) {
             Text("Stop Tracking")
         }
 
