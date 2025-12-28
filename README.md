@@ -104,4 +104,4 @@ Example payload:
 
 ## 📦 APK Download
 
-- [Download Debug APK](https://github.com/Shubhanshi04/offline-location-tracking-android/releases/tag/v1.0)
+- [Download Debug APK] (https://github.com/Shubhanshi04/offline-location-tracking-android/releases/tag/v1.0)
