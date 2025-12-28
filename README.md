@@ -102,3 +102,6 @@ Example payload:
   "speed": 1.2
 }
 
+## 📦 APK Download
+
+- [Download Debug APK](https://github.com/Shubhanshi04/offline-location-tracking-android/releases/tag/v1.0)
